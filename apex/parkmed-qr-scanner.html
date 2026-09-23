@@ -1,0 +1,404 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1.0,user-scalable=no,viewport-fit=cover">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="Parkmed QR">
+<meta name="apple-mobile-web-app-orientations" content="portrait">
+<link rel="apple-touch-icon" href="data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMTgwIiBoZWlnaHQ9IjE4MCIgdmlld0JveD0iMCAwIDE4MCAxODAiIGZpbGw9Im5vbmUiIHhtbG5zPSJodHRwOi8vd3d3LnczLm9yZy8yMDAwL3N2ZyI+CjxyZWN0IHdpZHRoPSIxODAiIGhlaWdodD0iMTgwIiBmaWxsPSIjMDAwIi8+CjxyZWN0IHg9IjIwIiB5PSIyMCIgd2lkdGg9IjYwIiBoZWlnaHQ9IjYwIiBmaWxsPSIjNENBRjUwIi8+CjxyZWN0IHg9IjEwMCIgeT0iMjAiIHdpZHRoPSI2MCIgaGVpZ2h0PSI2MCIgZmlsbD0iIzRDQUY1MCIvPgo8cmVjdCB4PSIyMCIgeT0iMTAwIiB3aWR0aD0iNjAiIGhlaWdodD0iNjAiIGZpbGw9IiM0Q0FGNTAiLz4KPC9zdmc+">
+<title>Parkmed QR Scanner</title>
+<link href="https://api.fontshare.com/v2/css?f[]=satoshi@400,500,600,700&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;700&display=swap" rel="stylesheet">
+<style>
+*{margin:0;padding:0;box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+body{font-family:'Inter',-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;background:#000;color:#fff;overflow:hidden;height:100vh}
+.container{position:relative;width:100vw;height:100vh;display:flex;flex-direction:column}
+.header{position:absolute;top:env(safe-area-inset-top,44px);left:0;right:0;z-index:10;display:flex;align-items:center;justify-content:space-between;padding:16px 20px;background:rgba(0,0,0,0.3)}
+.header-left{display:flex;align-items:center;gap:16px}
+.close-btn{width:32px;height:32px;border:none;background:none;color:#fff;font-size:20px;cursor:pointer;display:flex;align-items:center;justify-content:center}
+.header-title{font-size:18px;font-weight:600;color:#fff;font-family:'Satoshi',sans-serif}
+.help-btn{width:32px;height:32px;border:2px solid rgba(255,255,255,0.3);border-radius:50%;background:none;color:#fff;font-size:16px;cursor:pointer;display:flex;align-items:center;justify-content:center}
+#reader{width:100%;height:100%;position:relative;border:none!important}
+#reader video{width:100%!important;height:100%!important;object-fit:cover}
+/* html5-qrcode draws its own shaded box; we already draw our own corners */
+#reader #qr-shaded-region{display:none!important}
+.overlay{position:absolute;top:0;left:0;right:0;bottom:0;pointer-events:none;z-index:5}
+.frame{position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);width:280px;height:280px}
+.corner{position:absolute;width:32px;height:32px;border:4px solid #6C5CE7}
+.corner.tl{top:0;left:0;border-right:none;border-bottom:none;border-radius:16px 0 0 0}
+.corner.tr{top:0;right:0;border-left:none;border-bottom:none;border-radius:0 16px 0 0}
+.corner.bl{bottom:0;left:0;border-right:none;border-top:none;border-radius:0 0 0 16px}
+.corner.br{bottom:0;right:0;border-left:none;border-top:none;border-radius:0 0 16px 0}
+.branding{position:absolute;bottom:env(safe-area-inset-bottom,34px);left:50%;transform:translateX(-50%);padding:12px 20px;border-radius:16px;}
+.banner{height:50px;width:auto;max-width:200px;object-fit:contain}
+
+/* ═══════════════════════════════════════════
+   LOADING OVERLAY — fullscreen, always on top
+   ═══════════════════════════════════════════ */
+.loading-overlay{
+  position:fixed;inset:0;
+  background:#0b1e36;
+  display:none;
+  align-items:center;
+  justify-content:center;
+  z-index:9999;         /* highest — covers camera feed completely */
+  overflow:hidden;
+}
+
+/* DNA helix particles — floating background */
+.lo-particle{position:absolute;width:3px;height:3px;background:#3b82f6;border-radius:50%;opacity:0}
+.lo-particle:nth-child(1){top:18%;left:22%;animation:pFloat 2s ease-out .1s forwards}
+.lo-particle:nth-child(2){top:72%;left:70%;animation:pFloat 2s ease-out .25s forwards;width:4px;height:4px;background:#60a5fa}
+.lo-particle:nth-child(3){top:35%;left:78%;animation:pFloat 2s ease-out .4s forwards;width:2px;height:2px}
+.lo-particle:nth-child(4){top:82%;left:30%;animation:pFloat 2s ease-out .15s forwards;background:#93c5fd}
+.lo-particle:nth-child(5){top:50%;left:12%;animation:pFloat 2s ease-out .35s forwards;width:4px;height:4px;background:#1e40af}
+.lo-particle:nth-child(6){top:25%;left:88%;animation:pFloat 2s ease-out .5s forwards;width:2px;height:2px;background:#60a5fa}
+@keyframes pFloat{0%{opacity:0;transform:translateY(0) scale(0)}30%{opacity:.4;transform:translateY(-10px) scale(1)}100%{opacity:0;transform:translateY(-40px) scale(.5)}}
+
+/* Center stage */
+.lo-center{position:relative;z-index:2;display:flex;flex-direction:column;align-items:center}
+
+/* Shield icon — builds piece by piece */
+.lo-shield{width:68px;height:76px;position:relative;margin-bottom:24px}
+.lo-shield svg{width:68px;height:76px;filter:drop-shadow(0 4px 20px rgba(59,130,246,.25))}
+.lo-shield svg .shield-path{fill:none;stroke:url(#shieldGrad);stroke-width:2.5;stroke-linecap:round;stroke-linejoin:round;stroke-dasharray:220;stroke-dashoffset:220;animation:drawShield .8s cubic-bezier(.4,0,.2,1) .15s forwards}
+.lo-shield svg .shield-fill{fill:url(#shieldFillGrad);opacity:0;animation:shieldFill .4s ease-out .7s forwards}
+@keyframes drawShield{to{stroke-dashoffset:0}}
+@keyframes shieldFill{to{opacity:.12}}
+
+.lo-shield svg .shield-cross-v,.lo-shield svg .shield-cross-h{stroke:#60a5fa;stroke-width:3;stroke-linecap:round;stroke-dasharray:20;stroke-dashoffset:20}
+.lo-shield svg .shield-cross-v{animation:drawCross .35s ease-out .85s forwards}
+.lo-shield svg .shield-cross-h{animation:drawCross .35s ease-out .95s forwards}
+@keyframes drawCross{to{stroke-dashoffset:0}}
+
+.lo-shield svg .shield-check{fill:none;stroke:#fff;stroke-width:3;stroke-linecap:round;stroke-linejoin:round;stroke-dasharray:28;stroke-dashoffset:28;opacity:0}
+.lo-shield svg .shield-check.go{animation:checkDraw .4s ease-out forwards}
+@keyframes checkDraw{0%{opacity:1;stroke-dashoffset:28}100%{opacity:1;stroke-dashoffset:0}}
+
+.lo-shield.verified svg{filter:drop-shadow(0 4px 28px rgba(59,130,246,.5))}
+.lo-shield.verified svg .shield-cross-v,.lo-shield.verified svg .shield-cross-h{opacity:0;transition:opacity .2s}
+.lo-shield.verified svg .shield-fill{animation:none;opacity:.2}
+.lo-shield.verified svg .shield-path{stroke:url(#shieldGradDone)}
+
+/* Brand text — staggered letters */
+.lo-word{display:flex;margin-bottom:4px}
+.lo-word span{display:inline-block;opacity:0;transform:translateY(10px);animation:lIn .3s cubic-bezier(.23,1,.32,1) forwards}
+.lo-pk span{font-size:22px;font-weight:700;color:#fff;font-family:'Satoshi',sans-serif}
+.lo-hc span{font-size:22px;font-weight:300;color:#60a5fa;margin-left:1px;font-family:'Satoshi',sans-serif}
+.lo-hc span:first-child{margin-left:7px}
+.lo-pk span:nth-child(1){animation-delay:.35s}
+.lo-pk span:nth-child(2){animation-delay:.39s}
+.lo-pk span:nth-child(3){animation-delay:.43s}
+.lo-pk span:nth-child(4){animation-delay:.47s}
+.lo-pk span:nth-child(5){animation-delay:.51s}
+.lo-pk span:nth-child(6){animation-delay:.55s}
+.lo-pk span:nth-child(7){animation-delay:.59s}
+.lo-hc span:nth-child(1){animation-delay:.68s}
+.lo-hc span:nth-child(2){animation-delay:.72s}
+.lo-hc span:nth-child(3){animation-delay:.76s}
+.lo-hc span:nth-child(4){animation-delay:.8s}
+.lo-hc span:nth-child(5){animation-delay:.84s}
+.lo-hc span:nth-child(6){animation-delay:.88s}
+.lo-hc span:nth-child(7){animation-delay:.92s}
+.lo-hc span:nth-child(8){animation-delay:.96s}
+.lo-hc span:nth-child(9){animation-delay:1s}
+.lo-hc span:nth-child(10){animation-delay:1.04s}
+@keyframes lIn{to{opacity:1;transform:translateY(0)}}
+
+.lo-stat{font-size:12px;color:#475569;font-weight:500;letter-spacing:.08em;text-transform:uppercase;opacity:0;animation:fadeIn .4s ease-out 1.1s forwards;margin-top:6px;transition:all .3s;font-family:'Inter',sans-serif}
+.lo-stat.done{color:#60a5fa}
+@keyframes fadeIn{to{opacity:1}}
+
+.lo-scan-line{width:0;height:1.5px;background:linear-gradient(90deg,transparent,#3b82f6,#60a5fa,#3b82f6,transparent);margin-top:14px;border-radius:2px;animation:scanLine 1s cubic-bezier(.23,1,.32,1) 1.15s forwards}
+@keyframes scanLine{to{width:140px}}
+
+/* Exit — fades out loading overlay */
+.loading-overlay.exit{animation:loExit .35s ease-in forwards}
+@keyframes loExit{to{opacity:0}}
+
+.error{position:fixed;top:calc(env(safe-area-inset-top,44px) + 80px);left:20px;right:20px;background:#FF3B30;color:#fff;padding:16px 20px;border-radius:12px;display:none;z-index:1000;text-align:center;font-weight:500;font-family:'Inter',sans-serif}
+
+@media(max-width:480px){
+  .frame{width:240px;height:240px}
+  .header{padding:12px 16px}
+  .header-title{font-size:16px}
+  .branding{bottom:calc(env(safe-area-inset-bottom,20px) + 10px);padding:10px 16px}
+  .banner{height:40px;max-width:160px}
+  .lo-shield{width:58px;height:66px}
+  .lo-shield svg{width:58px;height:66px}
+  .lo-pk span,.lo-hc span{font-size:19px}
+}
+</style>
+</head>
+<body>
+<div class="container">
+  <div class="header">
+    <div class="header-left">
+      <button class="close-btn" onclick="$('#back').click();return false;">✕</button>
+      <div class="header-title">Scan Wellness QR</div>
+    </div>
+    <button class="help-btn" onclick="showHelp()">?</button>
+  </div>
+  <div id="reader"></div>
+  <div class="overlay">
+    <div class="frame">
+      <div class="corner tl"></div>
+      <div class="corner tr"></div>
+      <div class="corner bl"></div>
+      <div class="corner br"></div>
+    </div>
+  </div>
+  <div class="branding">
+    <img src="#APP_FILES#parkmed.png" alt="Parkmed" class="banner">
+  </div>
+</div>
+
+<!-- Loading Overlay -->
+<div class="loading-overlay" id="loadingOverlay">
+  <div class="lo-particle"></div>
+  <div class="lo-particle"></div>
+  <div class="lo-particle"></div>
+  <div class="lo-particle"></div>
+  <div class="lo-particle"></div>
+  <div class="lo-particle"></div>
+  <div class="lo-center">
+    <div class="lo-shield" id="loShield">
+      <svg viewBox="0 0 68 76">
+        <defs>
+          <linearGradient id="shieldGrad" x1="0" y1="0" x2="68" y2="76" gradientUnits="userSpaceOnUse">
+            <stop offset="0%" stop-color="#60a5fa"/>
+            <stop offset="100%" stop-color="#3b82f6"/>
+          </linearGradient>
+          <linearGradient id="shieldGradDone" x1="0" y1="0" x2="68" y2="76" gradientUnits="userSpaceOnUse">
+            <stop offset="0%" stop-color="#93c5fd"/>
+            <stop offset="100%" stop-color="#3b82f6"/>
+          </linearGradient>
+          <linearGradient id="shieldFillGrad" x1="0" y1="0" x2="68" y2="76" gradientUnits="userSpaceOnUse">
+            <stop offset="0%" stop-color="#60a5fa"/>
+            <stop offset="100%" stop-color="#1e40af"/>
+          </linearGradient>
+        </defs>
+        <path class="shield-fill" d="M34 6 L60 18 L60 40 Q60 60 34 72 Q8 60 8 40 L8 18 Z"/>
+        <path class="shield-path" d="M34 6 L60 18 L60 40 Q60 60 34 72 Q8 60 8 40 L8 18 Z"/>
+        <line class="shield-cross-v" x1="34" y1="28" x2="34" y2="48"/>
+        <line class="shield-cross-h" x1="24" y1="38" x2="44" y2="38"/>
+        <polyline class="shield-check" id="shieldCheck" points="23 38 31 47 46 30"/>
+      </svg>
+    </div>
+    <div class="lo-word">
+      <div class="lo-pk"><span>P</span><span>a</span><span>r</span><span>k</span><span>m</span><span>e</span><span>d</span></div>
+      <div class="lo-hc"><span>H</span><span>e</span><span>a</span><span>l</span><span>t</span><span>h</span><span>c</span><span>a</span><span>r</span><span>e</span></div>
+    </div>
+    <div class="lo-stat" id="loStat">Verifying...</div>
+    <div class="lo-scan-line"></div>
+  </div>
+</div>
+
+<div class="error" id="error">Camera access denied</div>
+
+<!-- Pinned version: an unpinned URL can silently change under you -->
+<script src="https://unpkg.com/html5-qrcode@2.3.8/html5-qrcode.min.js"></script>
+<script>
+let scanner = null;
+let isScanning = false;
+let currentCamera = 'environment';
+
+// Light zoom so users hold the phone a bit farther away, where the lens can focus.
+// Only applied on devices that support camera zoom. Set to 1 to disable.
+const PREFERRED_ZOOM = 1.5;
+
+function isiOSPWA(){return(window.navigator.standalone===true||window.matchMedia('(display-mode: standalone)').matches)&&/iPad|iPhone|iPod/.test(navigator.userAgent);}
+function isIOS(){return/iPad|iPhone|iPod/.test(navigator.userAgent);}
+
+function fixIOSPWA(){
+  if(!isIOS()) return Promise.resolve();
+  const tempVideo = document.createElement('video');
+  tempVideo.setAttribute('autoplay','');
+  tempVideo.setAttribute('playsinline','');
+  tempVideo.style.cssText = 'width:1px;height:1px;position:absolute;opacity:0.01';
+  document.body.appendChild(tempVideo);
+  return navigator.mediaDevices.getUserMedia({video:{facingMode:'environment'}})
+    .then(stream=>{
+      tempVideo.srcObject = stream;
+      return new Promise(resolve=>{
+        tempVideo.onloadedmetadata = ()=>{
+          tempVideo.play().then(()=>{
+            setTimeout(()=>{
+              stream.getTracks().forEach(t=>t.stop());
+              document.body.removeChild(tempVideo);
+              resolve();
+            }, 500);
+          }).catch(err=>{
+            stream.getTracks().forEach(t=>t.stop());
+            document.body.removeChild(tempVideo);
+            resolve();
+          });
+        };
+      });
+    })
+    .catch(err=>{
+      if(tempVideo.parentNode) document.body.removeChild(tempVideo);
+      return Promise.reject(err);
+    });
+}
+
+function startScanner(){
+  if(isScanning) return;
+  if(isiOSPWA()){
+    document.getElementById('error').textContent = "Initializing camera...";
+    document.getElementById('error').style.display = "block";
+    setTimeout(()=>{ document.getElementById('error').style.display = "none"; }, 2000);
+  }
+  (isiOSPWA() ? fixIOSPWA() : Promise.resolve())
+    .then(()=>{
+      if(!scanner) scanner = new Html5Qrcode("reader", {
+        formatsToSupport: [ Html5QrcodeSupportedFormats.QR_CODE ],
+        // Use the phone's built-in barcode detector when available (faster, more accurate)
+        experimentalFeatures: { useBarCodeDetectorIfSupported: true },
+        verbose: false
+      });
+      const config = {
+        fps: 15,
+        qrbox: function(w, h){
+          const size = Math.floor(Math.min(w,h) * 0.7);
+          return { width: Math.min(size,280), height: Math.min(size,280) };
+        },
+        // NOTE: no aspectRatio here. aspectRatio:1.0 forced a small square camera
+        // mode which was then stretched to fill the full screen -> blurry picture.
+        disableFlip: false,
+        videoConstraints: {
+          facingMode: { ideal: currentCamera },
+          width:  { ideal: 1920 },
+          height: { ideal: 1080 }
+        }
+      };
+      initializeScanner(config);
+    })
+    .catch(err=>{ showError(getErrorMessage(err)); });
+}
+
+function initializeScanner(config){
+  scanner.start(
+    {facingMode: currentCamera},
+    config,
+    qrCodeMessage=>{ handleScan(qrCodeMessage); },
+    errorMessage=>{}
+  ).then(()=>{
+    isScanning = true;
+    improveFocus();
+  }).catch(err=>{
+    showError(getErrorMessage(err));
+  });
+}
+
+// Turn on continuous autofocus (and a light zoom) when the camera supports it.
+function improveFocus(){
+  let caps = {};
+  try { caps = scanner.getRunningTrackCapabilities() || {}; } catch(e){ return; }
+  const advanced = [];
+  if(Array.isArray(caps.focusMode) && caps.focusMode.includes('continuous')){
+    advanced.push({ focusMode: 'continuous' });
+  }
+  if(caps.zoom && PREFERRED_ZOOM > 1){
+    const zoom = Math.min(Math.max(PREFERRED_ZOOM, caps.zoom.min || 1), caps.zoom.max || 1);
+    advanced.push({ zoom: zoom });
+  }
+  if(advanced.length){
+    scanner.applyVideoConstraints({ advanced: advanced }).catch(()=>{});
+  }
+}
+
+function handleScan(qrData){
+  if(window.scanProcessing) return;
+  window.scanProcessing = true;
+
+  // Vibrate immediately on scan
+  if(navigator.vibrate) navigator.vibrate([100,50,100]);
+
+  // ── STEP 1: Stop camera immediately — no more feed visible ──
+  if(scanner && isScanning){
+    isScanning = false;
+    scanner.stop().catch(()=>{});
+  }
+
+  // ── STEP 2: Show overlay INSTANTLY — camera feed is now covered ──
+  const overlay   = document.getElementById('loadingOverlay');
+  const shield    = document.getElementById('loShield');
+  const check     = document.getElementById('shieldCheck');
+  const stat      = document.getElementById('loStat');
+
+  // Reset state before showing
+  overlay.classList.remove('exit');
+  shield.classList.remove('verified');
+  check.classList.remove('go');
+  stat.textContent = 'Verifying...';
+  stat.classList.remove('done');
+
+  overlay.style.display = 'flex';   // overlay covers everything instantly
+
+  // ── STEP 3: Set APEX value in background immediately (no delay) ──
+  if(typeof apex !== 'undefined'){
+    try { apex.item("P48_SCANNED_QR").setValue(qrData); } catch(e){}
+  }
+
+  // ── STEP 4: At 1.4s — cross → check, glow ──
+  setTimeout(()=>{
+    shield.classList.add('verified');
+    check.classList.add('go');
+    stat.textContent = 'Verified';
+    stat.classList.add('done');
+  }, 1400);
+
+  // ── STEP 5: At 2s — fade out overlay, then trigger APEX click ──
+  setTimeout(()=>{
+    overlay.classList.add('exit');
+    setTimeout(()=>{
+      overlay.style.display = 'none';
+      overlay.classList.remove('exit');
+      try { $('#bcd').click(); } catch(e){ console.log("QR scan complete:", qrData); }
+      window.scanProcessing = false;
+    }, 350);
+  }, 2000);
+}
+
+function showError(message){
+  const errorDiv = document.getElementById('error');
+  errorDiv.textContent = message;
+  errorDiv.style.display = 'block';
+  setTimeout(()=>{ errorDiv.style.display = 'none'; }, 4000);
+}
+
+function getErrorMessage(err){
+  const name = err && err.name ? err.name : String(err || '');
+  if(name.indexOf('NotAllowedError')>-1) return isiOSPWA() ? 'Camera blocked. Open in Safari, allow camera, then re-add to home screen' : 'Camera permission denied. Please allow camera access';
+  if(name.indexOf('NotFoundError')>-1) return 'No camera found';
+  if(name.indexOf('NotReadableError')>-1) return 'Camera in use by another app';
+  return 'Camera access failed';
+}
+
+function showHelp(){ alert('Point your camera at any QR code to scan it automatically'); }
+
+window.addEventListener('load',()=>{
+  const startDelay = isiOSPWA() ? 1500 : 300;
+  setTimeout(startScanner, startDelay);
+});
+
+document.addEventListener('visibilitychange',()=>{
+  if(document.hidden){
+    if(scanner && isScanning) scanner.pause(true);
+  } else {
+    if(scanner && isScanning){
+      scanner.resume();
+    } else if(!isScanning && !window.scanProcessing){
+      setTimeout(startScanner, 800);
+    }
+  }
+});
+
+// Removed: the blob: service worker. Browsers refuse to register a service worker
+// from a blob: URL, so it never worked, and caching '/' would break APEX pages anyway.
+</script>
+</body>
+</html>
