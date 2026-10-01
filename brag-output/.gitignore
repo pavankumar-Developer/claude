@@ -9,3 +9,6 @@
 */work-*/
 */.brag.hf-transaction-*/
 share/
+
+# Delivery copies are committed so they can be downloaded from GitHub
+!videos/*.mp4
