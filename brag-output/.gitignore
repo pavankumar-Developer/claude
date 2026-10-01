@@ -1,0 +1,8 @@
+# Rendered videos are delivered directly (large binaries); rebuild with tools/build.mjs + hyperframes render
+*.mp4
+*.poster.mp4
+# composition/assets is a copy of shared-assets made by tools/build.mjs
+*/composition/assets/
+*/composition/.hyperframes/
+*/composition/renders/
+*/composition/snapshots/

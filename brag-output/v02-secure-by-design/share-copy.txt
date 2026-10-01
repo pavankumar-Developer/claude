@@ -1,0 +1,1 @@
+Parkmed Operations Excellence, part 2 of 6 — Protect: WAF, role-based access, encryption at rest and in transit, and audit logging on Oracle Cloud (OCI). Designed with DPDP requirements and privacy principles in mind. Secure by design.
